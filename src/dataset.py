@@ -7,7 +7,7 @@ def load_data(path: str="data/tiny_shakespeare.txt") -> str:
     return text
 
 def get_vocab_info(text: str) -> tuple[int, callable, callable]:
-    chars = sorted(list(set(text)))
+    chars = sorted(set(text))
     vocab_size = len(chars)
     stoi = { ch:i for i,ch in enumerate(chars) }
     itos = { i:ch for i,ch in enumerate(chars) }
