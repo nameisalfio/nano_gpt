@@ -17,6 +17,9 @@ class Config:
     if torch.cuda.is_available():
         device = 'cuda'    
     seed = 1337
+
+    # Model Architecture
+    n_embd = 32
     
     # Logging & Checkpoints
     use_wandb = False 
