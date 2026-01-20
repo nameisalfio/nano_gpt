@@ -1,17 +1,18 @@
+import torch
 from src.dataset import load_data, get_vocab_info, prepare_data, get_batch
+from src.model import BigramLanguageModel
 
-text_name = "data/tiny_shakespeare.txt"
-text = load_data()
-print(f"Loaded text {text_name}:\n{text[:500]}\n")
-print("..."*10 + "\n")
-
+text = load_data("data/tiny_shakespeare.txt")
 vocab_size, encode, decode = get_vocab_info(text)
-print(f"Vocabulary size: {vocab_size}\n")
-
 train_data, val_data = prepare_data(text, encode)
-print(f"Train data: {len(train_data)}\t Val data: {len(val_data)}\n")
 
-x_batch, y_batch = get_batch(train_data, batch_size=4, block_size=8)
-print("Batch obtained")
-print(f"X: {len(x_batch)}, shape: {x_batch.shape}\nY: {len(y_batch)}, shape: {y_batch.shape}\n")
-print(f"X: {x_batch[:50]}\nY: {y_batch[:50]}")
+model = BigramLanguageModel(vocab_size)
+xb, yb = get_batch(train_data, batch_size=32, block_size=8)
+logits, loss = model(xb, yb)
+print(f"Logits dimensions (B*T, V): {logits.shape}")
+print(f"Initial Loss (expected around {torch.log(torch.tensor(vocab_size)).item():.4f}): {loss.item():.4f}")
+
+context = torch.zeros((1, 1), dtype=torch.long) 
+generated_indices = model.generate(context, max_new_tokens=100)[0].tolist()
+print("\n--- GENERATION TEST (UNTRAINED MODEL) ---")
+print(decode(generated_indices))
