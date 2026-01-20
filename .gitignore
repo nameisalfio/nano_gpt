@@ -28,8 +28,7 @@ wheels/
 */.ipynb_checkpoints/*
 
 # --- AI/Deep Learning Specific ---
-data/raw/
-data/processed/
+data/*
 *.csv
 *.json
 *.zip

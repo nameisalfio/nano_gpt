@@ -60,9 +60,13 @@ def run_training(
                 wandb.log(dict(log_data))
 
         # Checkpointing 
-        if iter > 0 and iter % config.checkpoint_interval == 0 or iter == config.max_iters - 1:
+        if iter > 0 and iter % config.checkpoint_interval == 0:
             ckpt_path = save_checkpoint(model, optimizer, iter, metrics['val'], config.checkpoint_dir, f"ckpt_iter_{iter}")
             logger.info(f"Checkpoint saved at {ckpt_path}")
+
+        if iter == config.max_iters - 1:
+            ckpt_path = save_checkpoint(model, optimizer, iter, metrics['val'], config.checkpoint_dir, "last_checkpoint")
+            logger.info(f"Last checkpoint reached. Saved at {ckpt_path}")
 
         # Training Step
         xb, yb = get_batch(train_data, config.batch_size, config.block_size)
