@@ -1,0 +1,8 @@
+defaults:
+  - _self_
+  - model: transformer
+  - trainer: default
+  - dataset: shakespeare
+
+seed: 1337
+device: "mps" 

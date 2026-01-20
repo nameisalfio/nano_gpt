@@ -1,12 +1,12 @@
-# --- Python ---
+# --- Python & Environment ---
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-env/
 venv/
+env/
 .env
+.venv
+bin/
 build/
 develop-eggs/
 dist/
@@ -23,30 +23,30 @@ wheels/
 .installed.cfg
 *.egg
 
-# --- Jupyter Notebook ---
-.ipynb_checkpoints
-*/.ipynb_checkpoints/*
-
-# --- AI/Deep Learning Specific ---
-data/*
-*.csv
-*.json
-*.zip
-*.tar.gz
-
-# We don't want to upload model weights (large binaries)
+# --- Data & Models (Heavy Files) ---
+checkpoints/
 *.pt
 *.pth
-*.ckpt
 *.bin
-*.h5
 
-# Training logs (Tensorboard, WandB)
-runs/
+data/
+!data/.gitkeep
+
+# --- Hydra & Experiment Tracking ---
+outputs/
+multirun/
+.hydra/
+
+# WandB logs
 wandb/
 
-# --- IDE & OS ---
+# --- IDEs & OS Specific ---
 .vscode/
 .idea/
+*.swp
+*.swo
 .DS_Store
 Thumbs.db
+
+# --- Logs ---
+*.log

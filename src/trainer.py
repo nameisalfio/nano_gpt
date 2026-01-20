@@ -1,26 +1,26 @@
 import torch
 import logging
 import wandb
+from omegaconf import DictConfig, OmegaConf
 import torch.nn as nn
 from collections import OrderedDict
 from torch.optim import Optimizer
 
-from .config import Config
 from .dataset import get_batch
 from .utils import save_checkpoint
 
 logger = logging.getLogger(__name__)
 
 @torch.no_grad()
-def estimate_loss(model: nn.Module, train_data: torch.Tensor, val_data: torch.Tensor, config: Config) -> dict:
-    """Valuta la loss media sui due dataset."""
+def estimate_loss(model: nn.Module, train_data: torch.Tensor, val_data: torch.Tensor, config: DictConfig, device: str) -> dict:
+    """Estimate the average loss on the two datasets."""
     out = {}
     model.eval()
     for split, data in [('train', train_data), ('val', val_data)]:
         losses = torch.zeros(config.eval_iters)
         for k in range(config.eval_iters):
             X, Y = get_batch(data, config.batch_size, config.block_size)
-            X, Y = X.to(config.device), Y.to(config.device)
+            X, Y = X.to(device), Y.to(device)
             _, loss = model(X, Y)
             losses[k] = loss.item()
         out[split] = losses.mean().item()
@@ -32,19 +32,22 @@ def run_training(
     optimizer: Optimizer, 
     train_data: torch.Tensor, 
     val_data: torch.Tensor, 
-    config: Config,
-    start_iter: int = 0 
+    config: DictConfig, 
+    start_iter: int = 0,
+    device: str = "cpu"  
 ):
-    """Loop di training."""
-    logger.info(f"Starting training from iteration {start_iter} on {config.device}")
+    """Training loop."""
+    logger.info(f"Starting training from iteration {start_iter} on {device}")
+    
     if config.use_wandb:
-        wandb.init(project=config.project_name, name=config.run_name, config=vars(config))
+        wandb_cfg = OmegaConf.to_container(config, resolve=True)
+        wandb.init(project=config.project_name, name=config.run_name, config=wandb_cfg)
 
     for iter in range(start_iter, config.max_iters):
 
         # Periodic evaluation
         if iter % config.eval_interval == 0 or iter == config.max_iters - 1:
-            metrics = estimate_loss(model, train_data, val_data, config)
+            metrics = estimate_loss(model, train_data, val_data, config, device)
             
             log_data = OrderedDict([
                 ("iter", iter),
@@ -64,13 +67,14 @@ def run_training(
             ckpt_path = save_checkpoint(model, optimizer, iter, metrics['val'], config.checkpoint_dir, f"ckpt_iter_{iter}")
             logger.info(f"Checkpoint saved at {ckpt_path}")
 
+        # Final save
         if iter == config.max_iters - 1:
             ckpt_path = save_checkpoint(model, optimizer, iter, metrics['val'], config.checkpoint_dir, "last_checkpoint")
             logger.info(f"Last checkpoint reached. Saved at {ckpt_path}")
 
         # Training Step
         xb, yb = get_batch(train_data, config.batch_size, config.block_size)
-        xb, yb = xb.to(config.device), yb.to(config.device)
+        xb, yb = xb.to(device), yb.to(device)
 
         optimizer.zero_grad(set_to_none=True)
         _, loss = model(xb, yb)

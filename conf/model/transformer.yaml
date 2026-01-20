@@ -1,0 +1,6 @@
+name: "transformer"
+n_embd: 128
+n_head: 8
+n_layer: 6
+block_size: 256
+dropout: 0.2
