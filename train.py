@@ -24,7 +24,12 @@ def main():
     logger.info(f"Vocabulary created: {vocab_size} unique characters.")
     logger.info(f"Dataset split: {len(train_data)} tokens for training, {len(val_data)} tokens for validation.")
 
-    model = BigramLanguageModel(vocab_size).to(Config.device)
+    model = BigramLanguageModel(
+        vocab_size=vocab_size,
+        n_embd=Config.n_embd,
+        block_size=Config.block_size,
+        device=Config.device
+    ).to(Config.device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=Config.learning_rate, weight_decay=Config.weight_decay)
     n_params = sum(p.numel() for p in model.parameters())
     logger.info(f"Model instantiated. Total parameters: {n_params}")

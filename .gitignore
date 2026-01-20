@@ -28,7 +28,6 @@ wheels/
 */.ipynb_checkpoints/*
 
 # --- AI/Deep Learning Specific ---
-# Non vogliamo caricare dataset pesanti su Git
 data/raw/
 data/processed/
 *.csv
@@ -36,14 +35,14 @@ data/processed/
 *.zip
 *.tar.gz
 
-# Non vogliamo caricare i pesi dei modelli (binari pesanti)
+# We don't want to upload model weights (large binaries)
 *.pt
 *.pth
 *.ckpt
 *.bin
 *.h5
 
-# Log di training (Tensorboard, WandB)
+# Training logs (Tensorboard, WandB)
 runs/
 wandb/
 
