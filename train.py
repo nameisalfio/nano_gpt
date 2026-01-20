@@ -27,6 +27,9 @@ def main():
     model = BigramLanguageModel(
         vocab_size=vocab_size,
         n_embd=Config.n_embd,
+        n_head=Config.n_head,
+        n_layer=Config.n_layer,
+        dropout=Config.dropout,
         block_size=Config.block_size,
         device=Config.device
     ).to(Config.device)
@@ -58,14 +61,6 @@ def main():
         config=Config,
         start_iter=start_iter
     )
-
-    logger.info("Generating sample text after training:")
-    context = torch.zeros((1, 1), dtype=torch.long, device=Config.device)
-    generated_seq = model.predict(context, max_new_tokens=200)[0].tolist()
-    
-    print("-" * 50)
-    print(decode(generated_seq))
-    print("-" * 50)
 
 if __name__ == "__main__":
     main()

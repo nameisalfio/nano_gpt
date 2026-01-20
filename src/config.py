@@ -1,12 +1,9 @@
 import torch
 class Config:
-    # Data
-    batch_size = 64 
-    block_size = 256 
     
     # Training
     resume_path = None
-    max_iters = 5000
+    max_iters = 10000
     eval_interval = 500
     eval_iters = 200
     learning_rate = 3e-4 # Learning rate standard per Transformer
@@ -19,7 +16,12 @@ class Config:
     seed = 1337
 
     # Model Architecture
-    n_embd = 32
+    n_embd = 128
+    n_head = 8
+    n_layer = 6
+    dropout = 0.2
+    batch_size = 64 
+    block_size = 256 
     
     # Logging & Checkpoints
     use_wandb = False 
