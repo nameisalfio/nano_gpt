@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 class Head(nn.Module):
-    """ A single head of self-attention. """
+    """ A single head of Self-Attention. """
     def __init__(self, head_size: int, n_embd: int, block_size: int, dropout: float):
         super().__init__()
         self.key = nn.Linear(n_embd, head_size, bias=False)
@@ -17,7 +17,8 @@ class Head(nn.Module):
         k = self.key(x)   # (B, T, head_size)
         q = self.query(x) # (B, T, head_size)
         
-        # Compute attention scores
+        # Compute attention weights (Scaled Dot-Product Attention)
+        # (B, T, head_size) @ (B, head_size, T) -> (B, T, T)
         wei = q @ k.transpose(-2, -1) * (k.shape[-1]**-0.5) 
         wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) 
         wei = F.softmax(wei, dim=-1) # (B, T, T)
@@ -25,11 +26,11 @@ class Head(nn.Module):
         
         # Aggregate values
         v = self.value(x) # (B, T, head_size)
-        out = wei @ v    # (B, T, head_size)
+        out = wei @ v    # (B, T, T) @ (B, T, head_size) -> (B, T, head_size)
         return out
 
 class MultiHeadAttention(nn.Module):
-    """ Multiple self-attention heads in parallel. """
+    """ Multiple heads of Self-Attention running in parallel. """
     def __init__(self, num_heads: int, head_size: int, n_embd: int, block_size: int, dropout: float):
         super().__init__()
         self.heads = nn.ModuleList([Head(head_size, n_embd, block_size, dropout) for _ in range(num_heads)])
@@ -42,7 +43,7 @@ class MultiHeadAttention(nn.Module):
         return out
 
 class FeedForward(nn.Module):
-    """ Linear layer for token reflection. """
+    """ A simple linear layer for token reflection. """
     def __init__(self, n_embd: int, dropout: float):
         super().__init__()
         self.net = nn.Sequential(
@@ -66,8 +67,7 @@ class Block(nn.Module):
         self.ln2 = nn.LayerNorm(n_embd)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Residual connections: x = x + transformation(x)
-        # LayerNorm applied before modules (Pre-norm)
+        # Residual connections with Pre-norm
         x = x + self.sa(self.ln1(x))
         x = x + self.ffwd(self.ln2(x))
         return x
@@ -75,9 +75,13 @@ class Block(nn.Module):
 class BigramLanguageModel(nn.Module):
     def __init__(self, vocab_size: int, n_embd: int, n_head: int, n_layer: int, block_size: int, dropout: float, device: str):
         """
-        Complete GPT architecture.
+        Full GPT architecture, Decoder-Only.
         """
         super().__init__()
+        
+        # Dimension integrity check
+        assert n_embd % n_head == 0, f"n_embd ({n_embd}) must be divisible by n_head ({n_head})"
+        
         self.device = device
         self.block_size = block_size
         
@@ -90,7 +94,18 @@ class BigramLanguageModel(nn.Module):
         # Final normalization and mapping to vocabulary
         self.ln_f = nn.LayerNorm(n_embd) 
         self.lm_head = nn.Linear(n_embd, vocab_size)
+        
+        # Recursive weight initialization
         self.apply(self._init_weights)
+
+    def _init_weights(self, module):
+        """ Professional initialization based on GPT-2. """
+        if isinstance(module, nn.Linear):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
     def forward(self, idx: torch.Tensor, targets: torch.Tensor = None) -> tuple[torch.Tensor, torch.Tensor]:
         B, T = idx.shape
@@ -117,18 +132,10 @@ class BigramLanguageModel(nn.Module):
 
         return logits, loss
     
-    def _init_weights(self, module):
-        if isinstance(module, nn.Linear):
-            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
-            if module.bias is not None:
-                torch.nn.init.zeros_(module.bias)
-        elif isinstance(module, nn.Embedding):
-            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
-    
     def predict(self, idx: torch.Tensor, max_new_tokens: int) -> torch.Tensor:
         """ Autoregressive generation with context limit. """
         for _ in range(max_new_tokens):
-            idx_cond = idx[:, -self.block_size:] # Trim to avoid exceeding position buffer
+            idx_cond = idx[:, -self.block_size:] # Trim to not exceed position buffer
             logits, _ = self(idx_cond)
             logits = logits[:, -1, :] 
             probs = F.softmax(logits, dim=-1)
