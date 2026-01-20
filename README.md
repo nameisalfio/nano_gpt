@@ -1,4 +1,4 @@
-# Nano-GPT Rehab
+# Nano-GPT 
 
 This project implements a generative language model based on the GPT (Generative Pre-trained Transformer) architecture, trained on the Tiny Shakespeare dataset. The model was developed from the basics (Bigram) to include modern Self-Attention mechanisms.
 
